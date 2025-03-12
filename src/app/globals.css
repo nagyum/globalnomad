@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+
+@theme {
+  --text-4xl: 40px;
+  --text-4xl--line-height: 52px;
+
+  --text-3xl: 32px;
+  --text-3xl--line-height: 42px;
+
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+
+  --text-xl: 20px;
+  --text-xl--line-height: 32px;
+
+  --text-2lg: 18px;
+  --text-2lg--line-height: 26px;
+
+  --text-lg: 16px;
+  --text-lg--line-height: 26px;
+
+  --text-md: 14px;
+  --text-md--line-height: 24px;
+
+  --text-sm: 13px;
+  --text-sm--line-height: 22px;
+
+  --text-xs: 12px;
+  --text-xs--line-height: 20px;
+
+  /* 피그마에 있는 순서대로 */
+  /* Black */
+  --color-black-100: #1b1b1b;
+  --color-black-200: #112211;
+
+  /* Gray */
+  --color-gray-100: #fafafa;
+  --color-gray-200: #eeeeee;
+  --color-gray-300: #dddddd;
+  --color-gray-400: #cbc9cf;
+  --color-gray-500: #adaeb8;
+  --color-gray-600: #a4a1aa;
+  --color-gray-700: #a1a1a1;
+  --color-gray-800: #79747e;
+  --color-gray-900: #4b4b4b;
+
+  /* Green */
+  --color-green-10: #ced8d5;
+  --color-green-100: #0b3b2d;
+  --color-green-200: #00ac07;
+
+  /* Red */
+  --color-red-10: #ffe4e0;
+  --color-red-50: #ffc2ba;
+  --color-red-100: #ff472e;
+
+  /* Orange */
+  --color-orange-10: #ff7c1d;
+  --color-orange-100: #fff4e8;
+
+  /* Yellow */
+  --color-yellow-100: #ffc23d;
+
+  /* Blue */
+  --color-blue-10: #e5f3ff;
+  --color-blue-50: #2eb4ff;
+  --color-blue-100: #0085ff;
+
+  /* 반응형추가 */
+  screens: {
+    pc: '1200px',
+    tablet: { max: '1199px' },
+    mobile: { max: '767px' },
+  };
+
+}
