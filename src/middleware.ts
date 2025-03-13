@@ -8,6 +8,9 @@
 //   '/my-activities',
 //   '/my-reservations',
 // ] satisfies readonly string[];
+
+// const BEFORE_LOGIN_DOMAIN = ['/', '/login', 'signup'] satisfies readonly string[];
+
 // const BEFORE_LOGIN_DOMAIN = ['/activities', '/login', 'signup'] satisfies readonly string[];
 
 // export const middleware = async (request: NextRequest) => {
@@ -22,7 +25,11 @@
 //     }
 //   } else {
 //     if (BEFORE_LOGIN_DOMAIN.includes(pathname)) {
+
+//       return NextResponse.redirect(new URL('/', request.url));
+
 //       return NextResponse.redirect(new URL('/activities', request.url));
+
 //     }
 //   }
 
