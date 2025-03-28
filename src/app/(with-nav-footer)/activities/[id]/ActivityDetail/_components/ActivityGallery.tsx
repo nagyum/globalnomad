@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useRef, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Autoplay, Keyboard, Mousewheel, EffectFade } from 'swiper/modules';
+import { Navigation, Autoplay, Keyboard, EffectFade } from 'swiper/modules';
 import { Swiper as SwiperInstance } from 'swiper';
 import Lightbox from 'yet-another-react-lightbox';
 import prevArrow from '@/assets/icons/left-arrow-white.svg';
@@ -26,16 +26,9 @@ export default function ActivityGallery({ activityDetail }: ActivityGalleryProps
   const [currentIndex, setCurrentIndex] = useState(1);
   const [isAutoplay, setIsAutoplay] = useState(true);
   const swiperRef = useRef<SwiperInstance | null>(null);
-  const progressContent = useRef<HTMLSpanElement | null>(null);
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-
-  const onAutoplayTimeLeft = (swiper: SwiperInstance, time: number) => {
-    if (progressContent.current) {
-      progressContent.current.textContent = `${Math.ceil(time / 1000)}s`;
-    }
-  };
 
   const toggleAutoplay = () => {
     if (swiperRef.current) {
@@ -68,7 +61,7 @@ export default function ActivityGallery({ activityDetail }: ActivityGalleryProps
     <div className='relative h-[430px] w-full overflow-hidden md:h-[540px] md:rounded-lg lg:h-[550px]'>
       <Swiper
         onSwiper={(swiper) => (swiperRef.current = swiper)}
-        modules={[Navigation, Autoplay, Keyboard, Mousewheel, EffectFade]}
+        modules={[Navigation, Autoplay, Keyboard, EffectFade]}
         spaceBetween={10}
         slidesPerView={1}
         loop={false}
@@ -80,9 +73,6 @@ export default function ActivityGallery({ activityDetail }: ActivityGalleryProps
         keyboard={{
           enabled: true,
         }}
-        mousewheel={{
-          enabled: true,
-        }}
         onSlideChange={(swiper) => {
           setCurrentIndex(swiper.realIndex + 1);
         }}
@@ -90,7 +80,6 @@ export default function ActivityGallery({ activityDetail }: ActivityGalleryProps
           delay: 4000,
           disableOnInteraction: true,
         }}
-        onAutoplayTimeLeft={onAutoplayTimeLeft}
         onAutoplayStop={onAutoplayStop}
         onAutoplayStart={onAutoplayStart}
         className='h-full'
@@ -136,13 +125,6 @@ export default function ActivityGallery({ activityDetail }: ActivityGalleryProps
           </button>
         )}
       </div>
-      {hasMultipleImages && (
-        <div className='absolute top-4 right-4 z-60'>
-          <span ref={progressContent} className='text-md text-center text-white'>
-            0s
-          </span>
-        </div>
-      )}
       <Lightbox
         open={lightboxOpen}
         close={() => setLightboxOpen(false)}
