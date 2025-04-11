@@ -10,11 +10,12 @@ import { userDataFormSchema, UserDataFormValues, UserDataUpdateParams } from '@/
 import ClosedEye from '@/assets/icons/eye-hidden.svg';
 import OpendEye from '@/assets/icons/eye-visible.svg';
 import Image from 'next/image';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import RetryError from '@/components/RetryError';
 
 export default function MyPageForm() {
-  const { data: user } = useMyData();
+  const { data: user, isLoading, isError, refetch } = useMyData();
   const { mutate: updateUserData, isPending } = useUserdataUpdate();
-
   const [isShowPassword, setIsShowPassword] = useState(true);
   const [isShowPasswordConfirm, setIsShowPasswordConfirm] = useState(true);
 
@@ -76,15 +77,12 @@ export default function MyPageForm() {
   const isPasswordPairValid =
     (newPassword || '').length >= 8 && (confirmNewPassword || '').length >= 8 && newPassword === confirmNewPassword;
 
-  const nicknameChanged = nickname.trim() !== user?.nickname.trim();
+  const nicknameChanged = (nickname ?? '').trim() !== (user?.nickname.trim() ?? '');
 
   const isFormValidToSubmit =
     !!user &&
-    // 닉네임만 바꾼 경우
     ((nicknameChanged && !newPassword && !confirmNewPassword) ||
-      // 비밀번호만 제대로 바꾼 경우
       isPasswordPairValid ||
-      // 닉네임도 바꾸고 비밀번호도 바꾼 경우
       (nicknameChanged && isPasswordPairValid)) &&
     !errors.nickname &&
     !errors.newPassword &&
@@ -96,11 +94,18 @@ export default function MyPageForm() {
     }
   }, [newPassword, trigger]);
 
+  if (isLoading) return <LoadingSpinner />;
+  if (isError) return <RetryError onRetry={refetch} className='py-10' />;
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className='space-around mb-4 flex items-center justify-between'>
-        <h2 className='text-2xl font-bold'>내 정보</h2>
-        <Button type='submit' disabled={isPending || !isFormValidToSubmit || !isValid} className='px-[20px] py-[11px]'>
+        <h2 className='text-black-100 text-2xl font-bold'>내 정보</h2>
+        <Button
+          type='submit'
+          disabled={isPending || !isFormValidToSubmit || !isValid}
+          className='px-[16px] py-[10px] text-lg font-bold'
+        >
           {isPending ? '수정 중...' : '수정하기'}
         </Button>
       </div>
@@ -108,19 +113,20 @@ export default function MyPageForm() {
       <div className='space-y-4'>
         <input type='hidden' {...register('profileImageUrl')} />
 
-        <Input label='닉네임' placeholder='닉네임 입력' {...register('nickname')} />
+        <Input label='닉네임' placeholder='닉네임 입력' {...register('nickname')} className='bg-white' />
         <Input
           label='이메일'
           type='email'
           disabled
           placeholder='이메일 입력'
           {...register('email')}
-          className='bg-gray-200'
+          className='bg-white'
         />
 
         <div className='relative'>
           <Input
             label='새 비밀번호'
+            className='bg-white'
             error={errors.newPassword?.message as string}
             type={isShowPassword ? 'password' : 'text'}
             placeholder='8자 이상 입력해주세요'
@@ -141,6 +147,7 @@ export default function MyPageForm() {
         <div className='relative'>
           <Input
             label='새 비밀번호 확인'
+            className='bg-white'
             error={errors.confirmNewPassword?.message as string}
             type={isShowPasswordConfirm ? 'password' : 'text'}
             placeholder='비밀번호를 한번 더 입력해주세요'

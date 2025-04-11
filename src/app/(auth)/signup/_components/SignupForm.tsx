@@ -6,12 +6,12 @@ import SocialButtons from './SocialButtons';
 import Link from 'next/link';
 import Button from '@/components/Button';
 import { useSignup } from '@/lib/hooks/useUsers';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { SignupParams, signupSchema } from '@/lib/types/users';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ClosedEye from '@/assets/icons/eye-hidden.svg';
 import OpendEye from '@/assets/icons/eye-visible.svg';
 import Input from '@/components/Input';
@@ -24,6 +24,7 @@ export default function SignupForm() {
   const { mutateAsync: signup } = useSignup();
   const { mutateAsync: signin } = useLogin();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [isShowPassword, setIsShowPassword] = useState(true);
   const [isShowPasswordConfirm, setIsShowPasswordConfirm] = useState(true);
@@ -42,12 +43,25 @@ export default function SignupForm() {
     mode: 'onChange',
   });
 
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      const decoded = decodeURIComponent(error);
+      setErrorMessage(decoded);
+      setIsModalOpen(true);
+
+      const url = new URL(window.location.href);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
+
   const onSubmit = async (data: SignupParams) => {
     try {
       await signup(data);
       const { email, password } = data;
       await signin({ email, password });
-      toast.success('회원가입 성공 ');
+      toast.success('회원가입에 성공했습니다. ');
       reset();
       router.push('/login');
     } catch (error) {
@@ -64,13 +78,14 @@ export default function SignupForm() {
       }
     }
   };
+
   return (
-    <div className='flex min-h-screen items-center justify-center'>
+    <div className='my-32 flex items-center justify-center'>
       <div className='w-full max-w-xl px-4'>
         <div className='mb-[56px] flex justify-center'>
           <Link href='/'>
             <div className='relative h-[138px] w-[245px] md:h-[192px] md:w-[340px]'>
-              <Image src={logo} alt='회원가입창 로고' layout='fill' objectFit='contain' />
+              <Image src={logo} alt='회원가입창 로고' priority fill style={{ objectFit: 'contain' }} />
             </div>
           </Link>
         </div>
@@ -87,6 +102,7 @@ export default function SignupForm() {
                 onBlur: () => trigger('email'),
               })}
               disabled={isSubmitting}
+              className='bg-white'
             />
           </div>
 
@@ -101,6 +117,7 @@ export default function SignupForm() {
                 onBlur: () => trigger('nickname'),
               })}
               disabled={isSubmitting}
+              className='bg-white'
             />
           </div>
 
@@ -115,6 +132,7 @@ export default function SignupForm() {
                 onBlur: () => trigger('password'),
               })}
               disabled={isSubmitting}
+              className='bg-white'
             />
             <Image
               src={isShowPassword ? ClosedEye : OpendEye}
@@ -134,6 +152,7 @@ export default function SignupForm() {
               required
               {...register('confirmPassword')}
               disabled={isSubmitting}
+              className='bg-white'
             />
             <Image
               src={isShowPasswordConfirm ? ClosedEye : OpendEye}
@@ -146,13 +165,13 @@ export default function SignupForm() {
           </div>
 
           <Button type='submit' className='w-full py-[11px]' disabled={!isValid || isSubmitting}>
-            <div>회원가입 하기</div>
+            <div>회원가입하기</div>
           </Button>
         </form>
 
         <div className='mt-8 mb-12 text-center'>
           <p className='text-gray-800'>
-            회원이신가요?
+            회원이신가요?&nbsp;
             <Link href='/login' className='font-semibold text-green-100 underline'>
               로그인하기
             </Link>

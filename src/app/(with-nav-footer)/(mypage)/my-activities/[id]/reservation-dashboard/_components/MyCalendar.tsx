@@ -1,3 +1,5 @@
+'use client';
+
 import Calendar from 'react-calendar';
 import React, { useState } from 'react';
 import './myCalendar.css';
@@ -23,10 +25,11 @@ export interface Props {
   monthTotalData?: MonthReservation[];
   onDateChange: (date: string) => void;
   onActiveStartDateChange?: ({ activeStartDate }: { activeStartDate: Date | null }) => void;
+  initialDate?: Date;
 }
 
-export default function MyCalendar({ monthTotalData, onDateChange, onActiveStartDateChange }: Props) {
-  const [calendarValue, setCalendarValue] = useState<Value>(null);
+export default function MyCalendar({ monthTotalData, onDateChange, onActiveStartDateChange, initialDate }: Props) {
+  const [calendarValue, setCalendarValue] = useState<Value>(initialDate ?? new Date());
 
   const reservationStatusMap: Record<
     keyof ReservationStatus,
@@ -54,15 +57,10 @@ export default function MyCalendar({ monthTotalData, onDateChange, onActiveStart
   const handleChange = (newValue: Value) => {
     if (!newValue) return;
 
-    if (Array.isArray(newValue)) {
-      const [startDate] = newValue;
-      if (startDate) {
-        setCalendarValue(startDate);
-        onDateChange(startDate.toLocaleDateString('sv-SE'));
-      }
-    } else {
-      setCalendarValue(newValue);
-      onDateChange(newValue.toLocaleDateString('sv-SE'));
+    const selectedDate = Array.isArray(newValue) ? newValue[0] : newValue;
+    if (selectedDate) {
+      setCalendarValue(selectedDate);
+      onDateChange(selectedDate.toLocaleDateString('sv-SE'));
     }
   };
 

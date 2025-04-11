@@ -13,20 +13,46 @@ export interface User {
   updatedAt: string;
 }
 
+function generateRandomNickname(): string {
+  const adjectives = ['빠른', '멋진', '느린', '흰색'];
+  const animals = ['판다', '곰', '여우', '뱀', '토끼', '삵', '판다'];
+
+  let nickname = '';
+  let tries = 0;
+
+  while (tries < 10) {
+    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const animal = animals[Math.floor(Math.random() * animals.length)];
+
+    const candidate = `${adj}${animal}`;
+    if (candidate.length <= 4) {
+      nickname = candidate;
+      break;
+    }
+
+    tries++;
+  }
+
+  return nickname || '귀여운펭귄7';
+}
+
 export const GET = async (req: NextRequest) => {
   const { provider, code } = await extractProviderAndCode(req.url);
+  const url = new URL(req.url);
+  const state = url.searchParams.get('state') || 'signin';
 
   try {
-    console.log('OAuth 로그인 시도:', provider, code);
+    const endpoint = state === 'signup' ? 'sign-up' : 'sign-in';
 
     const apiResponse = await axios.post<{ user: User; accessToken: string; refreshToken: string }>(
-      `${process.env.NEXT_PUBLIC_API_URL}/oauth/sign-in/${provider}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/oauth/${endpoint}/${provider}`,
       {
         redirectUri:
           provider === 'google'
             ? process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI
             : process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI,
         token: code,
+        ...(state === 'signup' ? { nickname: generateRandomNickname() } : {}),
       },
     );
 
@@ -51,61 +77,10 @@ export const GET = async (req: NextRequest) => {
       expires: refreshTokenExp || undefined,
     });
 
-    console.log('로그인 성공:', apiResponse.data.user);
     return response;
   } catch (error: unknown) {
     if (error instanceof AxiosError) {
       console.error('로그인 실패:', error);
-
-      if (error.response?.status === 403) {
-        console.log('403 상태 → 회원가입 시도');
-
-        try {
-          const signupResponse = await axios.post<{ user: User; accessToken: string; refreshToken: string }>(
-            `${process.env.NEXT_PUBLIC_API_URL}/oauth/sign-up/${provider}`,
-            {
-              redirectUri:
-                provider === 'google'
-                  ? process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI
-                  : process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI,
-              token: code,
-              nickname: '코드잇',
-            },
-          );
-
-          const accessTokenExp = getExpirationDate(signupResponse.data.accessToken);
-          const refreshTokenExp = getExpirationDate(signupResponse.data.refreshToken);
-
-          const response = NextResponse.redirect(new URL('/', req.url));
-
-          response.cookies.set('accessToken', signupResponse.data.accessToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV !== 'development',
-            path: '/',
-            expires: accessTokenExp || undefined,
-          });
-
-          response.cookies.set('refreshToken', signupResponse.data.refreshToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV !== 'development',
-            path: '/',
-            expires: refreshTokenExp || undefined,
-          });
-
-          console.log('회원가입 성공:', signupResponse.data.user);
-          return response;
-        } catch (signupError: unknown) {
-          if (signupError instanceof AxiosError) {
-            console.error('회원가입 실패:', signupError);
-
-            const errorMessage = getErrorMessage(signupError);
-            return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(errorMessage)}`, req.url));
-          }
-        }
-      }
-
       const errorMessage = getErrorMessage(error);
       return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(errorMessage)}`, req.url));
     } else {

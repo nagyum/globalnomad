@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import RetryError from '@/components/RetryError';
 import { useActivityDetail } from '@/lib/hooks/useActivities';
 import { useMyData } from '@/lib/hooks/useUsers';
-import { useIntersectionObserver } from '@/lib/utils/useIntersectionObserver';
 import ActivityHeader from './_components/ActivityHeader';
 import ActivityGallery from './_components/ActivityGallery';
 import ActivityTab from './_components/ActivityTab';
@@ -23,13 +23,25 @@ const tabItems = [
 ];
 
 export default function ActivityDetailPage({ id }: { id: number }) {
-  const { data: activityDetail } = useActivityDetail(id);
+  const { data: activityDetail, isError, refetch } = useActivityDetail(id);
   const { data: userData } = useMyData();
 
   const [currentTab, setCurrentTab] = useState('description');
   const [isLoading, setIsLoading] = useState(true);
+  const [isProgrammaticScroll, setIsProgrammaticScroll] = useState(false);
 
-  useIntersectionObserver((id) => setCurrentTab(id));
+  const scrollToSection = useCallback((id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      setIsProgrammaticScroll(true);
+      el.scrollIntoView({ behavior: 'smooth' });
+
+      setTimeout(() => {
+        setIsProgrammaticScroll(false);
+        setCurrentTab(id);
+      }, 300);
+    }
+  }, []);
 
   const scrollToTop = () => {
     window.requestAnimationFrame(() => {
@@ -40,22 +52,62 @@ export default function ActivityDetailPage({ id }: { id: number }) {
 
   useEffect(() => {
     scrollToTop();
+    refetch();
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 500);
-
     return () => clearTimeout(timer);
-  }, []);
+  }, [refetch]);
+
+  useEffect(() => {
+    const sectionIds = ['description', 'location', 'reviews'];
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (isProgrammaticScroll) return;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          let closestSection = 'description';
+          let minDistance = Number.POSITIVE_INFINITY;
+
+          sectionIds.forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) {
+              const distance = Math.abs(el.getBoundingClientRect().top);
+              if (distance < minDistance) {
+                minDistance = distance;
+                closestSection = id;
+              }
+            }
+          });
+
+          if (closestSection !== currentTab) {
+            setCurrentTab(closestSection);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentTab, isProgrammaticScroll]);
 
   if (isLoading || !activityDetail) {
     return <LoadingSpinner />;
   }
+
+  if (isError) return <RetryError onRetry={refetch} className='py-40' />;
 
   const isSameUser = userData?.id === activityDetail.userId;
   const category = activityDetail.category;
   const currentActivityId = activityDetail.id;
   const description = activityDetail.description;
   const address = activityDetail.address;
+  const price = activityDetail.price;
+
+  const isLoggedIn = !!userData;
 
   return (
     <div className='relative flex flex-col items-center justify-center scroll-smooth'>
@@ -68,15 +120,9 @@ export default function ActivityDetailPage({ id }: { id: number }) {
         <ActivityGallery activityDetail={activityDetail} />
       </div>
       <div className={`md:${wrapper} px-5 md:flex-row md:gap-[2%] lg:mb-16`}>
-        <section className={`mt-6 mb-6 w-full ${!isSameUser ? 'md:w-[70%]' : 'md:w-full'}`}>
-          <div className='sticky top-0 z-20 bg-white'>
-            <ActivityTab
-              tabs={tabItems}
-              currentTab={currentTab}
-              onTabClick={(id) => {
-                setCurrentTab(id);
-              }}
-            />
+        <section className={`my-6 w-full ${!isSameUser ? 'md:w-[70%]' : 'md:w-full'}`}>
+          <div className='sticky top-0 z-20 bg-gray-100'>
+            <ActivityTab tabs={tabItems} currentTab={currentTab} onTabClick={scrollToSection} />
           </div>
           <div className='w-full'>
             <DescriptionSection description={description} />
@@ -86,16 +132,16 @@ export default function ActivityDetailPage({ id }: { id: number }) {
           </div>
         </section>
         {!isSameUser && (
-          <section className='md: fixed bottom-0 left-0 z-50 w-full md:relative md:top-0 md:right-0 md:w-[28%]'>
-            <MobileReservation />
+          <section className='activity-calender fixed bottom-0 left-0 z-50 w-full md:relative md:top-0 md:right-0 md:w-[28%]'>
+            <MobileReservation isLoggedIn={isLoggedIn} currentActivityId={currentActivityId} price={price} />
             <div className='sticky top-3 md:mt-6 md:mb-3'>
-              <TabletReservation />
-              <DesktopReservation />
+              <TabletReservation isLoggedIn={isLoggedIn} currentActivityId={currentActivityId} price={price} />
+              <DesktopReservation isLoggedIn={isLoggedIn} currentActivityId={currentActivityId} price={price} />
             </div>
           </section>
         )}
       </div>
-      <ScrollToTopButton onClick={scrollToTop} />
+      <ScrollToTopButton onClick={scrollToTop} isSameUser={isSameUser} isLoggedIn={isLoggedIn} />
     </div>
   );
 }

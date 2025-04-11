@@ -15,10 +15,13 @@ export const useMyReservations = (params: GetMyReservationsParams) => {
 };
 
 // 내 예약 수정(취소) 훅
+const cancelReservation = (reservationId: number) => cancelMyReservation(reservationId, 'canceled');
+
 export const useCancelMyReservation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (reservationId: number) => cancelMyReservation(reservationId, 'canceled'),
+    mutationKey: ['cancelMyReservation'],
+    mutationFn: cancelReservation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myReservations'] });
     },
@@ -39,7 +42,7 @@ export const useWriteReviewForReservation = () => {
 
 // 내 예약 무한스크롤 조회 훅
 export const useInfiniteMyReservations = (status?: GetMyReservationsParams['status']) => {
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 4;
 
   return useInfiniteQuery<GetMyReservationsResponse, Error>({
     queryKey: ['myReservations', status ?? 'all'],
